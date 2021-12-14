@@ -1,0 +1,10 @@
+* {
+}
+
+.goal-item,
+.todo-item {
+  list-style: none;
+}
+.item-done {
+  text-decoration: line-through;
+}

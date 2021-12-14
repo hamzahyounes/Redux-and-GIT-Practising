@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Todos Redux App
+        </title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.7.2/redux.min.js"></script>
+        <script src="https://unpkg.com/react@16.3.0-alpha.1/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@16.3.0-alpha.1/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+    </head>
+    <body>
+
+        <div>
+            <h1>Todos List</h1>
+            <input id="todo" type="text" placeholder="Add Todo here..."/>
+            <input id="todoBtn" type="button" value="Add Todo" />
+            <ul id="todos-list"></ul>
+        </div>
+        <div>
+            <h1>Goals List</h1>
+            <input id="goal" type="text" placeholder="Add Goal here..."/>
+            <input id="goalBtn" type="button" value="Add Goal" />
+            <ul id="goals-list"></ul>
+        </div>
+
+<!---------------- JavaScript Code is here ------------->
+
+        <script type="text/javascript">
+
+
+
+            
+            //Library Code
+
+            // function createStore (reducer) {
+            //     //Remember: The store is responsible for 4 things:
+            //     //1- holds the state.
+            //     //2- get the state.
+            //     //3- listen to the changes of the state.
+            //     //4- update the state.
+                
+            //     let state;
+            //     const listeners = [];
+                
+            //     const getState = () => state;
+                
+                
+            //     const subscribe = (listener) => {
+            //         listeners.push(listener);
+            //         return () => {
+            //             listeners.filter(l => l !== listener)
+            //         }
+            //     }
+                
+            //     const dispatch = (action) => {
+            //         state = reducer(state, action);
+            //         listeners.forEach((listener) => listener())
+            //     }
+                
+            //     return {
+            //         getState,
+            //         subscribe,
+            //         dispatch,
+            //     }
+            // }
+
+            //Declare actions types for better practices
+            const ADD_TODO = 'ADD_TODO';
+            const REMOVE_TODO = 'REMOVE_TODO';
+            const TOGGLE_TODO = 'TOGGLE_TODO';
+            const ADD_GOAL = 'ADD_GOAL';
+            const REMOVE_GOAL = 'REMOVE_GOAL';
+            const TOGGLE_GOAL = 'TOGGLE_TODO';
+
+            //Define action creators
+            function addTodoAction(todo) {
+                return {
+                    type: ADD_TODO,
+                    todo,
+                }
+            }
+            function removeTodoAction(id) {
+                return {
+                    type: REMOVE_TODO,
+                    id
+                }
+            }
+            function toggleTodoAction(id) {
+                return {
+                    type: TOGGLE_TODO,
+                    id,
+                }
+            }
+            function addGoalAction(goal) {
+                return {
+                    type: ADD_GOAL,
+                    goal,
+                }
+            }
+            function removeGoalAction(id) {
+                return {
+                    type: REMOVE_GOAL,
+                    id,
+                }
+            }
+            function toggleGoalAction(id) {
+                return {
+                    type: TOGGLE_GOAL,
+                    id,
+                }
+            }
+
+            //Todo Reducer
+            function todos (state = [], action) {
+                switch (action.type) {
+                    case ADD_TODO :
+                        return state.concat([action.todo]);
+                    case REMOVE_TODO :
+                        return state.filter(todo => todo.id !== action.id)
+                    case TOGGLE_TODO :
+                        return state.map(todo => todo.id !== action.id ?
+                            todo
+                            : Object.assign({}, todo, { complete: !todo.complete}))
+                    default : 
+                        return state;
+                }
+            }
+
+            //Goals Reducer
+            function goals (state = [], action) {
+                switch(action.type) {
+                    case ADD_GOAL :
+                        return state.concat([action.goal])
+                    case REMOVE_GOAL :
+                        return state.filter(goal => goal.id !== action.id)
+                    case TOGGLE_GOAL :
+                        return state.map(goal => goal.id === action.id ?
+                            Object.assign({}, goal, {complete: !goal.complete})
+                            : goal)
+                    default :
+                        return state;
+                }
+            }
+
+            //Root Reducer
+            // function app(state = {}, action) {
+            //     return {
+            //         todos: todos(state.todos, action),
+            //         goals: goals(state.goals, action)
+            //     }
+            // }
+
+            //Example
+            
+            //Middlewares
+
+            const checker = store => next => action => {
+                if(
+                    action.type === ADD_TODO
+                    && action.todo.name.toLowerCase().includes("bitcoin")) {
+                        return alert("Nope, that is a bad investment!")
+                    }
+                if(
+                    action.type === ADD_GOAL
+                    && action.goal.name.toLowerCase().includes("bitcoin")) {
+                        return alert("Nope, that is a bad investment!")
+                } 
+                return next(action);    
+            }
+                
+            const logger = store => next => action => {
+                console.group(action.type)
+                    console.log("The Action: ", action)
+                    //Some personal Though:
+                    //I think we invoked next(action) just to tell Redux to invoke the reducer and we passed in the action
+                    //since we passed in the action to the reducer, then now we have a new state based on this dispatched action.
+                    const result = next(action);
+                    console.log("The current State is: ", store.getState())
+                console.groupEnd();
+                
+                return result;
+            }
+
+            const motivator = store => next => action => {
+                if(action.type === ADD_GOAL)
+                    alert("That's a great goal!")
+                next(action);
+            }
+
+            const remember = store => next => action => {
+                switch(action.type){
+                    case(ADD_TODO):
+                        alert("Don't forget to "+ action.todo.name);
+                        break;
+                    case(ADD_GOAL):
+                        alert("Don't forget to "+ action.goal.name);
+                        break;
+                }
+                next(action);
+            }
+
+            const store = Redux.createStore(Redux.combineReducers({
+                todos,
+                goals,
+            }), Redux.applyMiddleware(checker, logger, motivator, remember));
+
+            store.subscribe(() => {
+                const { todos, goals } = store.getState();
+
+                document.getElementById('goals-list').innerHTML = '';
+                document.getElementById('todos-list').innerHTML = '';
+
+                todos.forEach(addTodoToDom);
+                goals.forEach(addGoalToDom)
+            });
+            
+            function getId() {
+                return Math.random().toString(36).substring(2) + (new Date()).getTime().toString(36);
+            }
+
+            function addTodo () {
+                const input = document.getElementById('todo');
+                const name = input.value;
+                input.value = '';
+                store.dispatch(addTodoAction({
+                    id: getId(),
+                    name,
+                    complete: false
+                }))
+            }
+
+            function addGoal() {
+                const input = document.getElementById('goal');
+                const name = input.value;
+                input.value = '';
+                store.dispatch(addGoalAction({
+                    id: getId(),
+                    name,
+                    complete: false,
+                }))
+            }
+
+            function toggleTodo (id) {
+                store.dispatch(toggleTodoAction())
+            }
+
+            function toggleGoal(id) {
+                store.dispatch(toggleGoalAction())
+            }
+
+            let todoBtn = document.getElementById('todoBtn');
+            todoBtn.addEventListener('click', addTodo
+            );
+
+            let goalBtn = document.getElementById('goalBtn');
+            goalBtn.addEventListener('click', addGoal);
+
+            function createRemoveButton(onClick) {
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = 'X';
+                removeBtn.addEventListener('click', onClick);
+
+                return removeBtn;
+            }
+
+            function addTodoToDom(todo) {
+                const node = document.createElement('li');
+                const text = document.createTextNode(todo.name);
+                const removeBtn = createRemoveButton(() => {
+                    store.dispatch(removeTodoAction(todo.id))
+                })
+
+                node.appendChild(text);
+                node.appendChild(removeBtn);
+                document.getElementById('todos-list')
+                    .appendChild(node);
+                node.style.textDecoration = 
+                    todo.complete ? 'line-through' : 'none';
+                node.addEventListener('click', () => {
+                    store.dispatch(toggleTodoAction(todo.id)
+                    )
+                    
+                }) 
+            }
+
+
+            function addGoalToDom(goal) {
+                const node = document.createElement('li');
+                const text = document.createTextNode(goal.name);
+                const removeBtn = createRemoveButton(() => {
+                    store.dispatch(removeGoalAction(goal.id))
+                })
+                node.appendChild(text);
+                node.appendChild(removeBtn);
+                
+                document.getElementById('goals-list')
+                    .appendChild(node);
+                node.style.textDecoration = 
+                    goal.complete ? 'line-through' : 'none';
+                node.addEventListener('click', () => {
+                    store.dispatch(toggleGoalAction(goal.id))
+                }) 
+
+                
+            }
+        </script>
+    </body>
+</html>
