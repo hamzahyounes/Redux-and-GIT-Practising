@@ -319,24 +319,8 @@
             )
         }
 
-        function Todos(props) {
-            return(
-                <div>
-                    Todos
-                    <List />
-                </div>
-            )
-        }
-        function Goals(props) {
-            return(
-                <div>
-                    Goals
-                    <List />
-                </div>
-            )
-        }
-            class App extends React.Component {
-                addTodo = e => {
+        class Todos extends React.Component {
+            addItem = e => {
                     e.preventDefault();
                     const name = this.input.value;
                     this.input.value = '';
@@ -348,17 +332,60 @@
                     }
                     ))
                 }
+            render() {
+                return(
+                    <div>
+                        Todos
+                        <input 
+                            type="text"
+                            placeHolder="Add Todo"
+                            ref= {input => this.input = input}/>
+                        <button onClick= {this.addItem}>Add Todo</button>
+                        <List />
+                    </div>
+                )
+
+            }
+        }
+        class Goals extends React.Component {
+            addItem = e => {
+                e.preventDefault();
+                const name = this.input.value;
+                this.input.value = '';
+
+                this.props.store.dispatch(addGoalAction({
+                    id: getId(),
+                    name,
+                }))
+            }
+            render() {
+                return(
+                    <div>
+                        Goal List
+                        <input 
+                            type="text"
+                            placeHolder= "Add Goal"
+                            ref = {input => this.input = input}
+                            />
+                        <button onClick= {this.addItem}>Add Goal</button>
+                        <List />
+                    </div>
+                )
+            }
+        }
+            class App extends React.Component {
+                componentDidMount() {
+                    const { store } = this.props;
+                    store.subscribe(()=> this.forceUpdate())
+                }
 
                 render() {
+                    const { store } = this.props;
+                    const { todos, goals } = store.getState();
                     return(<React.Fragment>
                             <h1>Todo List</h1>
-                            <input 
-                                type="text"
-                                placeHolder="Add Todo"
-                                ref= {input => this.input = input}/>
-                            <button onClick= {this.addTodo}>Add Todo</button>
-                            <Todos />
-                            <Goals />
+                            <Todos todos={todos} store= {this.props.store}/>
+                            <Goals goals={goals} store={this.props.store}/>
                         </React.Fragment>)
                 }
             }
