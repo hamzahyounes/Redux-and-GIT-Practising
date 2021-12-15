@@ -24,6 +24,10 @@
             <ul id="goals-list"></ul>
         </div>
 
+        <hr />
+
+        <div id="root"></div>
+
 <!---------------- JavaScript Code is here ------------->
 
         <script type="text/javascript">
@@ -304,6 +308,61 @@
 
                 
             }
+        </script>
+
+        <script type="text/babel" >
+        function List (props) {
+            return (
+                <ul>
+                    <li>LIST</li>
+                </ul>
+            )
+        }
+
+        function Todos(props) {
+            return(
+                <div>
+                    Todos
+                    <List />
+                </div>
+            )
+        }
+        function Goals(props) {
+            return(
+                <div>
+                    Goals
+                    <List />
+                </div>
+            )
+        }
+            class App extends React.Component {
+                addTodo = e => {
+                    e.preventDefault();
+                    const name = this.input.value;
+                    this.input.value = '';
+
+                    this.props.store.dispatch(addTodoAction({
+                        id: getId(),
+                        name,
+                        complete: false
+                    }
+                    ))
+                }
+
+                render() {
+                    return(<React.Fragment>
+                            <h1>Todo List</h1>
+                            <input 
+                                type="text"
+                                placeHolder="Add Todo"
+                                ref= {input => this.input = input}/>
+                            <button onClick= {this.addTodo}>Add Todo</button>
+                            <Todos />
+                            <Goals />
+                        </React.Fragment>)
+                }
+            }
+            ReactDOM.render(<App store={store} />, document.getElementById('root'))
         </script>
     </body>
 </html>
