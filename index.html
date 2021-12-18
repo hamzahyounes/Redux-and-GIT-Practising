@@ -134,12 +134,34 @@
                 }
             }
 
+            function handleAddTodo(name, callbackFunc) {
+                return dispatch => {
+                    return API.saveTodo(name)
+                            .then((todo) => {
+                                store.dispatch(addTodoAction(todo))
+                                callbackFunc();
+                            })
+                            .catch(() => alert("There was an error. Try again."))
+                }
+            }
+
             function handleDeleteTodo(todo) {
                 return dispatch => {
                     dispatch(removeTodoAction(todo.id));
                     return API.deleteTodo(todo.id)
                         .catch(() => {
                             dispatch(addTodoAction(todo))
+                            alert("An error occured. Try again.")
+                        })
+                }
+            }
+
+            function handleToggleTodo(item) {
+                return dispatch => {
+                    dispatch(toggleTodoAction(item.id))
+                    return API.saveTodoToggle(item.id)
+                        .catch(() => {
+                            dispatch(toggleTodoAction(item.id))
                             alert("An error occured. Try again.")
                         })
                 }
@@ -166,6 +188,17 @@
                             dispatch(addGoalAction(goal.id))
                             alert("An error occured. Try again.")
                         })
+                }
+            }
+
+            function handleReceivingData() {
+                return dispatch => {
+                    return Promise.all([
+                        API.fetchTodos(),
+                        API.fetchGoals()
+                    ]). then(([todos, goals]) => {
+                        dispatch(receiveDataAction(todos, goals))
+                    })
                 }
             }
 
@@ -278,16 +311,11 @@
 
         class Todos extends React.Component {
             addItem = e => {
-                    const { store } = this.props;
                     e.preventDefault();
-
-                    return API.saveTodo(this.input.value)
-                        .then((todo) => {
-                            store.dispatch(addTodoAction(todo))
-                            this.input.value= ''
-                        })
-                        .catch(() => alert("There was an error. Try again."))
-
+                    this.props.store.dispatch(handleAddTodo(
+                        this.input.value,
+                        () => this.input.value = ''
+                    ))
                 }
             removeItem= todo => {
                 const { store } = this.props;
@@ -295,12 +323,7 @@
 
             }
             toggleItem= item => {
-                store.dispatch(toggleTodoAction(item.id))
-                return API.saveTodoToggle(item.id)
-                    .catch(() => {
-                        store.dispatch(toggleTodoAction(item.id))
-                        alert("An error occured. Try again.")
-                    })
+                this.props.store.dispatch(handleToggleTodo(item))
             }
             render() {
                 return(
@@ -350,18 +373,13 @@
                 )
             }
         }
+
             class App extends React.Component {
 
                 componentDidMount() {
                     const { subscribe, dispatch } = this.props.store;
                     subscribe(()=> this.forceUpdate())
-
-                    Promise.all([
-                        API.fetchTodos(),
-                        API.fetchGoals()
-                    ]). then(([todos, goals]) => {
-                        dispatch(receiveDataAction(todos, goals))
-                    })
+                    dispatch(handleReceivingData())
                 }
 
                 render() {
@@ -375,7 +393,36 @@
                         </React.Fragment>)
                 }
             }
-            ReactDOM.render(<App store={store} />, document.getElementById('root'))
+
+            class ConnectedApp extends Redux.Component {
+                render() {
+                    return(
+                        <Context.Consumer>
+                            {store => (
+                                <App store={store} />
+                            )}  
+                        </Context.Consumer>
+
+                    )
+                }
+            }
+            const Context = Redux.createContext();
+            class Provider extends Redux.Component {
+                render() {
+                    return(
+                        <Context.Provider value={this.props.store}>
+                            {this.props.children}
+                        </Context.Provider>
+                    )
+                }
+            }
+
+            ReactDOM.render(
+                <Provider store={store} >
+                    <App/>
+                </Provider>,
+                document.getElementById('root')
+            )
         </script>
     </body>
 </html>
